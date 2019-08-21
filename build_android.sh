@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 
-# current host
+# 当前系统
 export HOST_TAG=darwin-x86_64
-
+# 支持的 Android CUP 架构
 # export ARCH=aarch64
 # export CPU=armv8-a
 export ARCH=armv7a
 export CPU=armv7-a
-# Min Android Version
+# 支持的 Android 最低系统版本
 export MIN=21
+export ANDROID_NDK_PLATFORM=android-21
 
 export PREFIX=$(pwd)/android/$CPU
-# NDK root
-export NDK=/Users/staff/Application/ndk/android-ndk-r20
+# NDK 根目录
+export NDK=/Users/hubin/Application/ndk/android-ndk-r20
 
 export MIN_PLATFORM=$NDK/platforms/android-$MIN
 export SYSROOT=$NDK/sysroot
@@ -26,23 +27,33 @@ export NM=$TOOLCHAIN/bin/arm-linux-androideabi-nm
 export RANLIB=$TOOLCHAIN/bin/arm-linux-androideabi-ranlib
 export STRIP=$TOOLCHAIN/bin/arm-linux-androideabi-strip
 
-OPTIMIZE_CFLAGS="-I$NDK/sysroot/usr/include -mfloat-abi=softfp -mfpu=vfp -marm -march=$CPU"
-ADDI_LDFLAGS="-shared -rpath-link=$SYSROOT/usr/lib/aarch64-linux-android -L$SYSROOT/usr/lib/aarch64-linux-android -fuse-ld=bfd"
+FF_EXTRA_CFLAGS=""
+
+# FF_CFLAGS="-O3 -Wall -pipe -ffast-math -fstrict-aliasing -Werror=strict-aliasing -Wno-psabi -Wa,--noexecstack -DANDROID  "
+# FF_CFLAGS="-DANDROID -I$SYSROOT/usr/include"
+# FF_LDFLAGS=" -shared -rpath-link=$MIN_PLATFORM/arch-arm64/usr/lib -L$MIN_PLATFORM/arch-arm64/usr/lib -nostdlib -fPIC -shared -pie -p  -shared"
+# OPTIMIZE_CFLAGS="-I$NDK/sysroot/usr/include -mfloat-abi=softfp -mfpu=vfp -marm -march=$CPU -DANDROID_PLATFORM=android-21"
+OPTIMIZE_CFLAGS="-DANDROID -I$NDK/sysroot/usr/include/arm-linux-androideabi/"
+# ADDI_LDFLAGS="-shared -rpath-link=$SYSROOT/usr/lib/aarch64-linux-android -L$SYSROOT/usr/lib/aarch64-linux-android -fuse-ld=bfd"
+# ADDI_LDFLAGS="-Wl,-rpath-link=$MIN_PLATFORM/arch-arm/usr/lib -Wl,-rpath-link=$TOOLCHAIN/lib/gcc/arm-linux-androideabi/4.9.x/armv7-a -L$MIN_PLATFORM/arch-arm/usr/lib -L$TOOLCHAIN/lib/gcc/arm-linux-androideabi/4.9.x/armv7-a"
+ADDI_LDFLAGS="-Wl,-rpath-link=$MIN_PLATFORM/arch-arm/usr/lib -L$MIN_PLATFORM/arch-arm/usr/lib -nostdlib"
 
 sed  -i "" "s/SLIBNAME_WITH_MAJOR='\$(SLIBNAME).\$(LIBMAJOR)'/SLIBNAME_WITH_MAJOR='\$(SLIBPREF)\$(FULLNAME)-\$(LIBMAJOR)\$(SLIBSUF)'/" configure
 sed  -i "" "s/LIB_INSTALL_EXTRA_CMD='\$\$(RANLIB) \"\$(LIBDIR)\\/\$(LIBNAME)\"'/LIB_INSTALL_EXTRA_CMD='\$\$(RANLIB) \"\$(LIBDIR)\\/\$(LIBNAME)\"'/" configure
 sed  -i "" "s/SLIB_INSTALL_NAME='\$(SLIBNAME_WITH_VERSION)'/SLIB_INSTALL_NAME='\$(SLIBNAME_WITH_MAJOR)'/" configure
 sed  -i "" "s/SLIB_INSTALL_LINKS='\$(SLIBNAME_WITH_MAJOR) \$(SLIBNAME)'/SLIB_INSTALL_LINKS='\$(SLIBNAME)'/" configure
-sed  -i "" "s/SHFLAGS='-shared -Wl,-soname,\$(SLIBNAME)'/SHFLAGS='-shared -soname \$(SLIBNAME)'/" configure
+# sed  -i "" "s/SHFLAGS='-shared -Wl,-soname,\$(SLIBNAME)'/SHFLAGS='-shared -soname \$(SLIBNAME)'/" configure
 # sed  -i "" "s/-Wl//g" configure
 
+
+# --sysroot=$SYSROOT \
+# --ld=$LD \
 ./configure \
 --prefix=$PREFIX \
 --ar=$AR \
 --as=$AS \
 --cc=$CC \
 --cxx=$CXX \
---ld=$LD \
 --nm=$NM \
 --ranlib=$RANLIB \
 --strip=$STRIP \
@@ -60,6 +71,9 @@ sed  -i "" "s/SHFLAGS='-shared -Wl,-soname,\$(SLIBNAME)'/SHFLAGS='-shared -sonam
 --disable-stripping \
 --extra-cflags="-Os -fpic $OPTIMIZE_CFLAGS" \
 --extra-ldflags="$ADDI_LDFLAGS"
+
+# --extra-cflags="$FF_EXTRA_CFLAGS  $FF_CFLAGS" \
+# --extra-ldflags="$FF_LDFLAGS"
 
 sed  -i "" "s/#define HAVE_TRUNC 0/#define HAVE_TRUNC 1/" config.h
 sed  -i "" "s/#define HAVE_TRUNCF 0/#define HAVE_TRUNCF 1/" config.h
